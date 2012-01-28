@@ -7,6 +7,7 @@
 #include "iniFile.h"
 #include "iniParser.h"
 #include "callback.h"
+#include "utility.h"
 #include <sys/types.h>
 #include <dirent.h>
 #include <list>
@@ -34,8 +35,6 @@ class watchdog
 
         map<string, callback> suspects;
 
-        string itos(int);
-        int stoi(string);
 };
 
 #endif // WATCHDOG_H

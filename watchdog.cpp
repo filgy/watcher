@@ -66,7 +66,7 @@ void watchdog::loadCallbacks(){
     if(files.size() == 0)
         throw WATCHDOG_CANNOT_FIND_CALLBACKS;
 
-    logger::getInstance()->write("Finded "+ this->itos(files.size()) +" configs", true);
+    logger::getInstance()->write("Finded "+ utility::itos(files.size()) +" configs", true);
 
     iniFile file;
     string fileName;
@@ -85,8 +85,8 @@ void watchdog::loadCallbacks(){
             callback cb(*p, file.getValue("General", "name"), file.getValue("General", "logfile"));
 
             //Get optional data
-            unsigned int position = (file.getValue("General", "position") == "")? 0 : this->stoi(file.getValue("General", "position").c_str());
-            unsigned int size = (file.getValue("General", "size") == "")? 0 : this->stoi(file.getValue("General", "size").c_str());
+            unsigned int position = (file.getValue("General", "position") == "")? 0 : utility::stoi(file.getValue("General", "position").c_str());
+            unsigned int size = (file.getValue("General", "size") == "")? 0 : utility::stoi(file.getValue("General", "size").c_str());
 
             //Set optional data
             cb.setPosition(position);
@@ -212,17 +212,4 @@ void watchdog::DEBUG(){
 
         cout << endl;
     }
-}
-
-string watchdog::itos(int number){
-    ostringstream str;
-    str << number;
-    return str.str();
-}
-
-int watchdog::stoi(string str){
-    istringstream is(str);
-    int number;
-    is >> number;
-    return number;
 }
