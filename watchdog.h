@@ -2,6 +2,7 @@
 #define WATCHDOG_H
 
 //#include <boost/xpressive/xpressive.hpp>
+#include "logger.h"
 #include "flags.h"
 #include "iniFile.h"
 #include "iniParser.h"
@@ -30,6 +31,8 @@ class watchdog
         string callbackDir;
 
         map<string, callback> suspects;
+
+        string itos(int);
 };
 
 #endif // WATCHDOG_H

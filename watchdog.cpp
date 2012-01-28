@@ -1,26 +1,44 @@
 #include "watchdog.h"
 
 watchdog::watchdog(string callbackDir){
+    logger::getInstance()->open("./server.log");
+
     this->callbackDir = callbackDir;
 
     try{
+        logger::getInstance()->write("Watchdog starting...", true);
+
         this->loadCallbacks();
 
         this->DEBUG();
 
         this->saveCallbacks();
     }
-    catch(...){
+    catch(errorFlags e){
+        switch(e){
+            case PARSER_CANNOT_OPEN_FILE:
+            //case PARSER_CANNOT_MAKE_REGEX:
+            case WATCHDOG_CANNOT_OPEN_DIR:
+                break;
+            case WATCHDOG_CANNOT_FIND_CALLBACKS:
+            case WATCHDOG_CANNOT_LOAD_CALLBACKS:
+                break;
 
+            default:
+
+                break;
+        }
     }
 }
 
 watchdog::~watchdog()
 {
-    //dtor
+    logger::getInstance()->close();
 }
 
 list<string> watchdog::findCallbacks(){
+    logger::getInstance()->write("Finding configuration in " + this->callbackDir, true);
+
     DIR* dirHandler = NULL;
     struct dirent* directory;
 
@@ -48,10 +66,14 @@ void watchdog::loadCallbacks(){
     if(files.size() == 0)
         throw WATCHDOG_CANNOT_FIND_CALLBACKS;
 
+    logger::getInstance()->write("Finded "+ this->itos(files.size()) +" configs", true);
+
     iniFile file;
     string fileName;
 
     for(list<string>::iterator p = files.begin(); p != files.end(); p++){
+        logger::getInstance()->write("Loading "+ (*p), true);
+
         fileName = this->callbackDir+(*p);
 
         //Loading callback file
@@ -81,6 +103,7 @@ void watchdog::loadCallbacks(){
 
             //No valid trigger -> invalid callback file
             if(cb.getTriggersCount() == 0){
+                logger::getInstance()->error("No valid trigger in "+ (*p) + ", skipping", true);
                 continue;
             }
 
@@ -88,9 +111,13 @@ void watchdog::loadCallbacks(){
         }
         //Invalid callback file!
         else{
+            logger::getInstance()->error("Invalid callback file "+ (*p) + ", skipping", true);
             continue;
         }
     }
+
+    if(this->suspects.size() == 0)
+        throw WATCHDOG_CANNOT_LOAD_CALLBACKS;
 }
 
 void watchdog::saveCallbacks(){
@@ -103,6 +130,8 @@ void watchdog::saveCallbacks(){
     fstream* fileHandler;
 
     for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
+        logger::getInstance()->write("Saving "+ (*p).second.getFile(), true);
+
         file = this->callbackDir+((*p).second.getFile());
         name = (*p).second.getName();
         logfile = (*p).second.getLogfile();
@@ -160,4 +189,12 @@ void watchdog::DEBUG(){
 
         cout << endl;
     }
+}
+
+string watchdog::itos(int number){
+    ostringstream str;
+
+    str << number;
+
+    return str.str();
 }
