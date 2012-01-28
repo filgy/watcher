@@ -24,16 +24,16 @@ class trigger
 class callback
 {
     public:
-        callback(string, string, string, unsigned int = 0, unsigned int = 0);
+        callback(string, string, string, long = 0, long = 0);
 
-        void setPosition(unsigned int);
-        void setSize(unsigned int);
+        void setPosition(long);
+        void setSize(long);
 
         string getFile();
         string getName();
         string getLogfile();
-        unsigned int getPosition();
-        unsigned int getSize();
+        long getPosition();
+        long getSize();
         int getTriggersCount();
 
         void addTrigger(string, string, string);
@@ -44,8 +44,8 @@ class callback
         string file;
         string name;
         string logfile;
-        unsigned int position;
-        unsigned int size;
+        long position;
+        long size;
 
         map<string, trigger> triggers;
 

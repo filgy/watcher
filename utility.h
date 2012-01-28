@@ -3,14 +3,16 @@
 
 #include <string>
 #include <sstream>
+#include <fstream>
 
 using namespace std;
 
 class utility
 {
     public:
-        static string itos(int);
-        static int stoi(string);
+        static string ltos(long);
+        static long stol(string);
+        static long fileSize(string);
     private:
         utility();
 };

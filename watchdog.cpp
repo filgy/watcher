@@ -22,6 +22,7 @@ watchdog::watchdog(string callbackDir, unsigned int interval){
                 break;
             case WATCHDOG_CANNOT_FIND_CALLBACKS:
             case WATCHDOG_CANNOT_LOAD_CALLBACKS:
+            case WATCHDOG_CANNOT_LOAD_LOGFILE:
                 break;
 
             default:
@@ -66,7 +67,7 @@ void watchdog::loadCallbacks(){
     if(files.size() == 0)
         throw WATCHDOG_CANNOT_FIND_CALLBACKS;
 
-    logger::getInstance()->write("Finded "+ utility::itos(files.size()) +" configs", true);
+    logger::getInstance()->write("Finded "+ utility::ltos(files.size()) +" configs", true);
 
     iniFile file;
     string fileName;
@@ -85,8 +86,8 @@ void watchdog::loadCallbacks(){
             callback cb(*p, file.getValue("General", "name"), file.getValue("General", "logfile"));
 
             //Get optional data
-            unsigned int position = (file.getValue("General", "position") == "")? 0 : utility::stoi(file.getValue("General", "position").c_str());
-            unsigned int size = (file.getValue("General", "size") == "")? 0 : utility::stoi(file.getValue("General", "size").c_str());
+            long position = (file.getValue("General", "position") == "")? 0 : utility::stol(file.getValue("General", "position").c_str());
+            long size = (file.getValue("General", "size") == "")? 0 : utility::stol(file.getValue("General", "size").c_str());
 
             //Set optional data
             cb.setPosition(position);
@@ -125,7 +126,7 @@ void watchdog::saveCallbacks(){
         return;
 
     string file, name, logfile;
-    unsigned int position, size;
+    long position, size;
 
     fstream* fileHandler;
 
@@ -167,22 +168,80 @@ void watchdog::saveCallbacks(){
 void watchdog::run(){
     this->loadCallbacks();
 
-    if(this->suspects.size() == 0)
-        return;
+    string logfile;
+    long size;
+    long position;
+    long actualSize;
 
+    fstream* fileHandler = NULL;
+
+    //Inifinity
     while(true){
-        string logfile;
-        fstream* fileHandler = NULL;
-
         for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
             logfile = (*p).second.getLogfile();
+            position = (*p).second.getPosition();
+            size = (*p).second.getSize();
 
             logger::getInstance()->write("Checking " + logfile, true);
 
+            fileHandler = new fstream(logfile.c_str(), ios::in);
 
+            if(!fileHandler->is_open()){
+                delete fileHandler;
+                throw WATCHDOG_CANNOT_LOAD_LOGFILE;
+            }
+
+            actualSize = utility::fileSize(logfile);
+
+            //Logfile without any change
+            if(size == actualSize){
+                logger::getInstance()->write("No new records", true);
+
+                fileHandler->close();
+                delete fileHandler;
+                continue;
+            }
+            //Logrotate
+            else if(size > actualSize){
+                logger::getInstance()->write("Logrotate, system pause..", true);
+
+                fileHandler->close();
+                delete fileHandler;
+
+                sleep(10);
+
+                (*p).second.setPosition(0);
+                (*p).second.setSize(0);
+
+                continue;
+            }
+
+            unsigned int counter = 0;
+            string line;
+
+            fileHandler->seekp(position, ios::beg);
+
+            while(getline(*fileHandler, line)){
+                counter++;
+            }
+
+            fileHandler->clear();
+
+            logger::getInstance()->write("Loaded "+ utility::ltos(counter) +" lines", true);
+
+            actualSize = utility::fileSize(logfile);
+
+            (*p).second.setPosition(fileHandler->tellg());
+            (*p).second.setSize(actualSize);
+
+            fileHandler->close();
+
+            delete fileHandler;
         }
 
         this->saveCallbacks();
+
+        //Soft kitty, warm kitty, little ball of fur..
         sleep(this->interval);
     }
 }
