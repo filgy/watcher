@@ -7,6 +7,8 @@ watchdog::watchdog(string callbackDir){
         this->loadCallbacks();
 
         this->DEBUG();
+
+        this->saveCallbacks();
     }
     catch(...){
 
@@ -58,7 +60,7 @@ void watchdog::loadCallbacks(){
         //Valid callback file
         if(file.isSection("General") && file.getValue("General", "logfile") != "" && file.getValue("General", "name") != ""){
             //Create callback
-            callback cb(file.getValue("General", "name"), file.getValue("General", "logfile"));
+            callback cb(*p, file.getValue("General", "name"), file.getValue("General", "logfile"));
 
             //Get optional data
             unsigned int position = (file.getValue("General", "position") == "")? 0 : (unsigned int)atoi(file.getValue("General", "position").c_str());
@@ -91,6 +93,48 @@ void watchdog::loadCallbacks(){
     }
 }
 
+void watchdog::saveCallbacks(){
+    if(this->suspects.size() == 0)
+        return;
+
+    string file, name, logfile;
+    unsigned int position, size;
+
+    fstream* fileHandler;
+
+    for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
+        file = this->callbackDir+((*p).second.getFile());
+        name = (*p).second.getName();
+        logfile = (*p).second.getLogfile();
+        position = (*p).second.getPosition();
+        size = (*p).second.getSize();
+
+        fileHandler = new fstream(file.c_str(), ios::out);
+
+        //Error - cant write to callback file
+        if(!fileHandler->is_open()){
+            delete fileHandler;
+            continue;
+        }
+
+        (*fileHandler) << "[General]" << endl;
+        (*fileHandler) << " name=" << name << endl;
+        (*fileHandler) << " logfile=" << logfile << endl;
+        (*fileHandler) << " position=" << position << endl;
+        (*fileHandler) << " size=" << size << endl << endl;
+
+        map<string, trigger> triggers = (*p).second.getTriggers();
+        for(map<string, trigger>::iterator q = triggers.begin(); q != triggers.end(); q++){
+            (*fileHandler) << "[" << (*q).first << "]" <<endl;
+            (*fileHandler) << " pattern=" << (*q).second.getPattern() << endl;
+            (*fileHandler) << " callback=" << (*q).second.getCommand() << endl << endl;
+        }
+
+        fileHandler->close();
+        delete fileHandler;
+    }
+}
+
 void watchdog::DEBUG(){
     if(this->suspects.size() == 0)
         return;
@@ -101,6 +145,7 @@ void watchdog::DEBUG(){
         cout << "Suspect: " << (*p).first << endl;
         callback tmp = (*p).second;
 
+        cout << " - file: " << tmp.getFile() << endl;
         cout << " - name: " << tmp.getName() << endl;
         cout << " - logfile: " << tmp.getLogfile() << endl;
         cout << " - position: " << tmp.getPosition() << endl;

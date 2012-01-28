@@ -20,8 +20,9 @@ class watchdog
         virtual ~watchdog();
 
         list<string> findCallbacks();
-        void loadCallbacks();
 
+        void loadCallbacks();
+        void saveCallbacks();
 
         void DEBUG();
     protected:
