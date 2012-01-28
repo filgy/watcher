@@ -19,7 +19,7 @@ class logger
     private:
         logger(){};
         logger(logger const&){};
-        logger& operator =(logger const&){};
+        //logger& operator =(logger const&){ };
 
         static logger* instance;
         static fstream* fileHandler;

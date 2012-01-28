@@ -1,18 +1,18 @@
 #include "watchdog.h"
 
-watchdog::watchdog(string callbackDir){
+watchdog::watchdog(string callbackDir, unsigned int interval){
     logger::getInstance()->open("./server.log");
 
     this->callbackDir = callbackDir;
+    this->interval = interval;
 
     try{
         logger::getInstance()->write("Watchdog starting...", true);
 
-        this->loadCallbacks();
+        //Run Forrest, run!
+        this->run();
+        //this->DEBUG();
 
-        this->DEBUG();
-
-        this->saveCallbacks();
     }
     catch(errorFlags e){
         switch(e){
@@ -85,8 +85,8 @@ void watchdog::loadCallbacks(){
             callback cb(*p, file.getValue("General", "name"), file.getValue("General", "logfile"));
 
             //Get optional data
-            unsigned int position = (file.getValue("General", "position") == "")? 0 : (unsigned int)atoi(file.getValue("General", "position").c_str());
-            unsigned int size = (file.getValue("General", "size") == "")? 0 : (unsigned int)atoi(file.getValue("General", "size").c_str());
+            unsigned int position = (file.getValue("General", "position") == "")? 0 : this->stoi(file.getValue("General", "position").c_str());
+            unsigned int size = (file.getValue("General", "size") == "")? 0 : this->stoi(file.getValue("General", "size").c_str());
 
             //Set optional data
             cb.setPosition(position);
@@ -164,6 +164,29 @@ void watchdog::saveCallbacks(){
     }
 }
 
+void watchdog::run(){
+    this->loadCallbacks();
+
+    if(this->suspects.size() == 0)
+        return;
+
+    while(true){
+        string logfile;
+        fstream* fileHandler = NULL;
+
+        for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
+            logfile = (*p).second.getLogfile();
+
+            logger::getInstance()->write("Checking " + logfile, true);
+
+
+        }
+
+        this->saveCallbacks();
+        sleep(this->interval);
+    }
+}
+
 void watchdog::DEBUG(){
     if(this->suspects.size() == 0)
         return;
@@ -193,8 +216,13 @@ void watchdog::DEBUG(){
 
 string watchdog::itos(int number){
     ostringstream str;
-
     str << number;
-
     return str.str();
+}
+
+int watchdog::stoi(string str){
+    istringstream is(str);
+    int number;
+    is >> number;
+    return number;
 }

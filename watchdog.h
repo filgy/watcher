@@ -17,7 +17,7 @@ using namespace std;
 class watchdog
 {
     public:
-        watchdog(string callbackDir);
+        watchdog(string callbackDir, unsigned int = 1);
         virtual ~watchdog();
 
         list<string> findCallbacks();
@@ -25,14 +25,17 @@ class watchdog
         void loadCallbacks();
         void saveCallbacks();
 
+        void run();
+
         void DEBUG();
-    protected:
     private:
         string callbackDir;
+        unsigned int interval;
 
         map<string, callback> suspects;
 
         string itos(int);
+        int stoi(string);
 };
 
 #endif // WATCHDOG_H
