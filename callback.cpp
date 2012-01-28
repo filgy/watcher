@@ -18,8 +18,9 @@ string trigger::getCommand(){
     return this->command;
 }
 
-callback::callback(string name, string logfile, unsigned int position, unsigned int size)
+callback::callback(string file, string name, string logfile, unsigned int position, unsigned int size)
 {
+    this->file = file;
     this->name = name;
     this->logfile = logfile;
     this->position = position;
@@ -33,6 +34,10 @@ void callback::setPosition(unsigned int position){
 
 void callback::setSize(unsigned int size){
     this->size = size;
+}
+
+string callback::getFile(){
+    return this->file;
 }
 
 string callback::getName(){
