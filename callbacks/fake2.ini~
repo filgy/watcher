@@ -1,0 +1,18 @@
+[General]
+ name=Mail watcher
+ logfile=/var/log/mail.log
+ position=0
+ size=0
+
+[sshd-failure]
+ pattern=sshd[0-9\:\[\]\ ]+Failed\ password\ for\ ([^\ ]+)\ from\ ([0-9\.]+)
+ callback=bash -c "echo sshd: Failed password for \1 from \2 | mail -s 'sshd: Failed password' -c admin@example.cz admin@example.com"
+
+[sshd-login]
+ pattern=sshd[0-9\:\[\]\ ]+Accepted\ password\ for\ ([^\ ]+)\ from\ ([0-9\.]+)
+ callback=bash -c "echo sshd: Accepted password for \1 from \2 | mail -s 'sshd: Accepted password' -c admin@example.cz admin@example.com"
+
+[sudo-failure]
+ pattern=^.+\ sudo\:\ .+\ authentication\ failure;\ logname\=([^\ ]+)\ .+\ tty\=([^\ ]+)\ .+$
+ callback=bash -c "echo -e 'sudo: Failed password for \1 from \2\n\0' | mail -s 'Watcher sudo: Failed password' -c admin@example.cz admin@example.com"
+
