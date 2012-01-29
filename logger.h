@@ -8,6 +8,7 @@
 using namespace std;
 
 enum loggerFlags{
+    E_ALL,
     E_NOTICE,
     E_WARNING,
     E_ERROR,

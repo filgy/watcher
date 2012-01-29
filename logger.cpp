@@ -1,7 +1,9 @@
 #include "logger.h"
 
 fstream* logger::fileHandler = NULL;
+
 loggerFlags logger::errorReporting = E_ERROR;
+
 bool logger::verbose = false;
 
 void logger::setErrorReporting(loggerFlags flag){
@@ -17,10 +19,9 @@ bool logger::open(string fileName){
 
     if(logger::fileHandler->is_open())
         return true;
-    else{
-        delete logger::fileHandler;
-        return false;
-    }
+
+    delete logger::fileHandler;
+    return false;
 }
 
 bool logger::write(string message, loggerFlags flag){
