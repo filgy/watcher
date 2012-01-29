@@ -2,17 +2,22 @@
 #include <cstring>
 #include "watchdog.h"
 
-string HELP_MESSAGE = "";
+string HELP_MESSAGE = "Usage: watchdog [callbacksdir] [timeout]";
 
 int main(int argc, char* argv[]){
     if(argc == 2 && strcmp("--help", argv[1]) == 0)
         cout << HELP_MESSAGE << endl;
     else{
+        string callbackDir = (argc == 2)? argv[1] : "./callbacks/";
+        unsigned int interval = (argc == 3)? atoi(argv[2]) : 5;
+
+        if(interval == 0) interval++;
+
         try{
-            watchdog puppy("./callbacks/", 5);
+            watchdog puppy(callbackDir, interval);
         }
         catch(...){
-            cerr << "Got exception" << endl;
+            return 1;
         }
     }
 

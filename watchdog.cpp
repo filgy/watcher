@@ -1,16 +1,18 @@
 #include "watchdog.h"
 
 watchdog::watchdog(string callbackDir, unsigned int interval){
+    this->callbackDir = callbackDir;
+    this->interval = interval;
+
     //Setup logger
     logger::setVerbose(true);
     logger::setErrorReporting(E_NOTICE);
     logger::open("./server.log");
 
-    this->callbackDir = callbackDir;
-    this->interval = interval;
-
     try{
         logger::write("Watchdog starting...", E_NOTICE);
+
+        this->loadCallbacks();
 
         //Run Forrest, run!
         this->run();
@@ -18,22 +20,36 @@ watchdog::watchdog(string callbackDir, unsigned int interval){
     catch(errorFlags e){
         switch(e){
             case PARSER_CANNOT_OPEN_FILE:
-            //case PARSER_CANNOT_MAKE_REGEX:
+                logger::write("Cannot open file", E_ERROR);
+                break;
             case WATCHDOG_CANNOT_OPEN_DIR:
+                logger::write("Cannot open directory", E_ERROR);
                 break;
             case WATCHDOG_CANNOT_FIND_CALLBACKS:
-            case WATCHDOG_CANNOT_LOAD_CALLBACKS:
-            case WATCHDOG_CANNOT_LOAD_LOGFILE:
+                logger::write("Cannot find callbacks", E_ERROR);
                 break;
-
+            case WATCHDOG_CANNOT_LOAD_CALLBACKS:
+                logger::write("Cannot load callbacks", E_ERROR);
+                break;
+            case WATCHDOG_CANNOT_LOAD_LOGFILE:
+                logger::write("Cannot load logfile", E_ERROR);
+                break;
+            case WATCHDOG_CANNOT_PROCESS_CALLBACK:
+                logger::write("Cannot process callback", E_ERROR);
+                break;
+            //Callback abort
+            case WATCHDOG_CALLBACK_ABORT:
+                throw WATCHDOG_ABORT;
+                break;
             default:
-
+                logger::write("Catched unhandled expcetion", E_ERROR);
                 break;
         }
 
         logger::write("Aborting..", E_ERROR);
+        logger::close();
 
-        throw 1;
+        throw WATCHDOG_ABORT;
     }
 }
 
@@ -48,11 +64,11 @@ list<string> watchdog::findCallbacks(){
     DIR* dirHandler = NULL;
     struct dirent* directory;
 
-    if((dirHandler = opendir(this->callbackDir.c_str())) == NULL)
-        throw WATCHDOG_CANNOT_OPEN_DIR;
-
     list<string> files;
     string file;
+
+    if((dirHandler = opendir(this->callbackDir.c_str())) == NULL)
+        throw WATCHDOG_CANNOT_OPEN_DIR;
 
     while((directory = readdir(dirHandler)) != NULL){
         file = string(directory->d_name);
@@ -130,10 +146,9 @@ void watchdog::saveCallbacks(){
     if(this->suspects.size() == 0)
         return;
 
+    fstream* fileHandler;
     string file, name, logfile;
     long position, size;
-
-    fstream* fileHandler;
 
     for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
         logger::write("Saving "+ (*p).second.getFile(), E_NOTICE);
@@ -152,6 +167,7 @@ void watchdog::saveCallbacks(){
             continue;
         }
 
+        //Write general informations to callback file
         (*fileHandler) << "[General]" << endl;
         (*fileHandler) << " name=" << name << endl;
         (*fileHandler) << " logfile=" << logfile << endl;
@@ -159,6 +175,8 @@ void watchdog::saveCallbacks(){
         (*fileHandler) << " size=" << size << endl << endl;
 
         map<string, trigger> triggers = (*p).second.getTriggers();
+
+        //Write all triggers to callback file
         for(map<string, trigger>::iterator q = triggers.begin(); q != triggers.end(); q++){
             (*fileHandler) << "[" << (*q).first << "]" <<endl;
             (*fileHandler) << " pattern=" << (*q).second.getPattern() << endl;
@@ -171,12 +189,8 @@ void watchdog::saveCallbacks(){
 }
 
 void watchdog::run(){
-    this->loadCallbacks();
-
     string logfile;
-    long size;
-    long position;
-    long actualSize;
+    long size, position, actualSize;
 
     fstream* fileHandler = NULL;
 
@@ -190,6 +204,7 @@ void watchdog::run(){
 
             logger::write("Checking " + logfile, E_NOTICE);
 
+            //Opening logfile
             fileHandler = new fstream(logfile.c_str(), ios::in);
 
             if(!fileHandler->is_open()){
@@ -197,6 +212,7 @@ void watchdog::run(){
                 throw WATCHDOG_CANNOT_LOAD_LOGFILE;
             }
 
+            //Get actual size of logfile
             actualSize = utility::fileSize(logfile);
 
             //Logfile without any change
@@ -209,7 +225,7 @@ void watchdog::run(){
             }
             //Logrotate
             else if(size > actualSize){
-                logger::write("Logrotate, system pause..", E_WARNING);
+                logger::write("Logrotate, system pause, sleeping..", E_WARNING);
 
                 fileHandler->close();
                 delete fileHandler;
@@ -222,42 +238,49 @@ void watchdog::run(){
                 continue;
             }
 
+            string line, command;
             unsigned int loadedLines = 0;
             unsigned int processedCallbacks = 0;
+            regexApiMatch match;
+            pid_t pid;
 
-            string line;
-
+            //Set position to last position
             fileHandler->seekp(position, ios::beg);
 
             //Get all triggers
             map<string, trigger> triggers = (*p).second.getTriggers();
 
-            regexApiMatch match;
-
-            string command;
-
             //Loading lines from logfile
             while(getline(*fileHandler, line)){
+                //Checking all triggers
                 for(map<string, trigger>::iterator q = triggers.begin(); q != triggers.end(); q++){
+                    //If regex match
                     if(regexApi::preg_match((*q).second.getPattern(), line, match)){
                         command = (*q).second.getCommand();
 
+                        //Complete callback command
                         for(int i = 0; i < match.size(); i++)
                             command = utility::replace("\\" + utility::itos(i), match[i], command);
 
-                        pid_t pid;
-
+                        //Fork
                         if((pid = fork()) == -1){
                             logger::write("Cannot fork", E_ERROR);
-                            throw 2;
+
+                            fileHandler->close();
+                            delete fileHandler;
+
+                            throw WATCHDOG_CANNOT_PROCESS_CALLBACK;
                         }
 
+                        //Calling callback
                         if(!pid){
                             execvp(command.c_str(), NULL);
-                            exit(1);
-                        }
 
-                        logger::write("PROCEED: " + command, E_NOTICE);
+                            fileHandler->close();
+                            delete fileHandler;
+
+                            throw WATCHDOG_CALLBACK_ABORT;
+                        }
 
                         processedCallbacks++;
                     }
@@ -268,8 +291,7 @@ void watchdog::run(){
 
             fileHandler->clear();
 
-            logger::write("Loaded "+ utility::ltos(loadedLines) +" lines", E_NOTICE);
-            logger::write("Processed " + utility::ltos(processedCallbacks) +" callbacks", E_NOTICE);
+            logger::write("Loaded "+ utility::ltos(loadedLines) +" lines (callbacks: "+ utility::ltos(processedCallbacks) +")", E_NOTICE);
 
             actualSize = utility::fileSize(logfile);
 
@@ -285,32 +307,5 @@ void watchdog::run(){
 
         //Soft kitty, warm kitty, little ball of fur..
         sleep(this->interval);
-    }
-}
-
-void watchdog::DEBUG(){
-    if(this->suspects.size() == 0)
-        return;
-
-    cout << "#------ DEBUG -------#" << endl;
-
-    for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
-        cout << "Suspect: " << (*p).first << endl;
-        callback tmp = (*p).second;
-
-        cout << " - file: " << tmp.getFile() << endl;
-        cout << " - name: " << tmp.getName() << endl;
-        cout << " - logfile: " << tmp.getLogfile() << endl;
-        cout << " - position: " << tmp.getPosition() << endl;
-        cout << " - size: " << tmp.getSize() << endl;
-
-        map<string, trigger> triggers = tmp.getTriggers();
-        for(map<string, trigger>::iterator q = triggers.begin(); q != triggers.end(); q++){
-            cout << "   [" << (*q).first << "]" <<endl;
-            cout << "   - pattern: " << (*q).second.getPattern() << endl;
-            cout << "   - command: " << (*q).second.getCommand() << endl;
-        }
-
-        cout << endl;
     }
 }

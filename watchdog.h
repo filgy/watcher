@@ -2,6 +2,8 @@
 #define WATCHDOG_H
 
 #include <sys/types.h>
+#include <signal.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <list>
 #include <map>
