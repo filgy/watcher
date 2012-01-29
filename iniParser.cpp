@@ -10,26 +10,20 @@ iniFile iniParser::load(string fileName){
 
     string line;
     string section = "General";
+    string section_regul = "^\\[([A-z0-9\\-]+)\\]$";
+    string value_regul = "^([^\\=]+)\\=(.+)$";
 
-    boost::xpressive::sregex section_regul = boost::xpressive::sregex::compile("^\\[([A-z0-9\\-]+)\\]$");
-    boost::xpressive::sregex value_regul = boost::xpressive::sregex::compile("^([^\\=]+)\\=(.+)$");
-    boost::xpressive::smatch match;
-
-    //regex section_regul("^\\[([A-z0-9]+)\\]$", regex_constants::extended);
-    //regex value_regul("^([^\\=]+)\\=(.+)$", regex_constants::extended);
-    //smatch match;
+    regexApiMatch match;
 
     while(getline(fileHandler, line)){
         line = utility::trim(line);
 
-        if(boost::xpressive::regex_match(line, match, section_regul)){
-        //if(regex_match(line, match, section_regul)){
+        if(regexApi::preg_match(section_regul, line, match)){
             section = match[1];
 
             file.addSection(section);
         }
-        else if(boost::xpressive::regex_match(line, match, value_regul)){
-        //else if(regex_match(line, match, value_regul)){
+        else if(regexApi::preg_match(value_regul, line, match)){
             if(!file.isSection(section))
                 file.addSection(section);
 

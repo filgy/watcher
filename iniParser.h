@@ -2,8 +2,7 @@
 #define INIPARSER_H
 
 #include <fstream>
-#include <boost/xpressive/xpressive.hpp>
-//#include <regex>
+#include "regexApi.h"
 #include "flags.h"
 #include "utility.h"
 #include "iniFile.h"
