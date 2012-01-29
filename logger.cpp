@@ -1,13 +1,15 @@
 #include "logger.h"
 
-logger* logger::instance = NULL;
 fstream* logger::fileHandler = NULL;
+loggerFlags logger::errorReporting = E_ERROR;
+bool logger::verbose = false;
 
-logger* logger::getInstance(){
-    if(!instance)
-        instance = new logger;
+void logger::setErrorReporting(loggerFlags flag){
+    logger::errorReporting = flag;
+}
 
-    return instance;
+void logger::setVerbose(bool verbose){
+    logger::verbose = verbose;
 }
 
 bool logger::open(string fileName){
@@ -21,24 +23,17 @@ bool logger::open(string fileName){
     }
 }
 
-bool logger::write(string message, bool verbose){
-    if(verbose)
-        cout << "[*] " << message << endl;
+bool logger::write(string message, loggerFlags flag){
+    if(flag < logger::errorReporting)
+        return false;
+
+    message = ((flag >= E_WARNING)? "[!] " : "[*] ") + message;
+
+    if(logger::verbose)
+        cout << message << endl;
 
     if(logger::fileHandler && logger::fileHandler->is_open()){
-        *(logger::fileHandler) << "[*] " << message << endl;
-        return true;
-    }
-
-    return false;
-}
-
-bool logger::error(string message, bool verbose){
-    if(verbose)
-        cerr << "[!] " << message << endl;
-
-    if(logger::fileHandler && logger::fileHandler->is_open()){
-        *(logger::fileHandler) << "[!] " << message << endl;
+        *(logger::fileHandler) << message << endl;
         return true;
     }
 

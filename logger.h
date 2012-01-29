@@ -7,22 +7,25 @@
 
 using namespace std;
 
+enum loggerFlags{
+    E_NOTICE,
+    E_WARNING,
+    E_ERROR,
+};
+
 class logger
 {
     public:
-        static logger* getInstance();
-        bool open(string);
-        bool write(string, bool = false);
-        bool error(string, bool = false);
-        bool close();
+        static void setErrorReporting(loggerFlags = E_ERROR);
+        static void setVerbose(bool = true);
 
+        static bool open(string);
+        static bool write(string, loggerFlags);
+        static bool close();
     private:
-        logger(){};
-        logger(logger const&){};
-        //logger& operator =(logger const&){ };
-
-        static logger* instance;
         static fstream* fileHandler;
+        static loggerFlags errorReporting;
+        static bool verbose;
 };
 
 #endif // LOGGER_H

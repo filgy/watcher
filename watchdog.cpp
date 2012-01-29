@@ -1,18 +1,19 @@
 #include "watchdog.h"
 
 watchdog::watchdog(string callbackDir, unsigned int interval){
-    logger::getInstance()->open("./server.log");
+    //Setup logger
+    logger::setVerbose(true);
+    logger::setErrorReporting(E_NOTICE);
+    logger::open("./server.log");
 
     this->callbackDir = callbackDir;
     this->interval = interval;
 
     try{
-        logger::getInstance()->write("Watchdog starting...", true);
+        logger::write("Watchdog starting...", E_NOTICE);
 
         //Run Forrest, run!
         this->run();
-        //this->DEBUG();
-
     }
     catch(errorFlags e){
         switch(e){
@@ -34,11 +35,11 @@ watchdog::watchdog(string callbackDir, unsigned int interval){
 
 watchdog::~watchdog()
 {
-    logger::getInstance()->close();
+    logger::close();
 }
 
 list<string> watchdog::findCallbacks(){
-    logger::getInstance()->write("Finding configuration in " + this->callbackDir, true);
+    logger::write("Finding configuration in " + this->callbackDir, E_NOTICE);
 
     DIR* dirHandler = NULL;
     struct dirent* directory;
@@ -67,13 +68,13 @@ void watchdog::loadCallbacks(){
     if(files.size() == 0)
         throw WATCHDOG_CANNOT_FIND_CALLBACKS;
 
-    logger::getInstance()->write("Finded "+ utility::ltos(files.size()) +" configs", true);
+    logger::write("Finded "+ utility::ltos(files.size()) +" configs", E_NOTICE);
 
     iniFile file;
     string fileName;
 
     for(list<string>::iterator p = files.begin(); p != files.end(); p++){
-        logger::getInstance()->write("Loading "+ (*p), true);
+        logger::write("Loading "+ (*p), E_NOTICE);
 
         fileName = this->callbackDir+(*p);
 
@@ -104,7 +105,7 @@ void watchdog::loadCallbacks(){
 
             //No valid trigger -> invalid callback file
             if(cb.getTriggersCount() == 0){
-                logger::getInstance()->error("No valid trigger in "+ (*p) + ", skipping", true);
+                logger::write("No valid triggers in "+ (*p) +", skipping", E_WARNING);
                 continue;
             }
 
@@ -112,7 +113,7 @@ void watchdog::loadCallbacks(){
         }
         //Invalid callback file!
         else{
-            logger::getInstance()->error("Invalid callback file "+ (*p) + ", skipping", true);
+            logger::write("Invalid callback file "+ (*p) +", skipping", E_WARNING);
             continue;
         }
     }
@@ -131,7 +132,7 @@ void watchdog::saveCallbacks(){
     fstream* fileHandler;
 
     for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
-        logger::getInstance()->write("Saving "+ (*p).second.getFile(), true);
+        logger::write("Saving "+ (*p).second.getFile(), E_NOTICE);
 
         file = this->callbackDir+((*p).second.getFile());
         name = (*p).second.getName();
@@ -182,7 +183,7 @@ void watchdog::run(){
             position = (*p).second.getPosition();
             size = (*p).second.getSize();
 
-            logger::getInstance()->write("Checking " + logfile, true);
+            logger::write("Checking " + logfile, E_NOTICE);
 
             fileHandler = new fstream(logfile.c_str(), ios::in);
 
@@ -195,7 +196,7 @@ void watchdog::run(){
 
             //Logfile without any change
             if(size == actualSize){
-                logger::getInstance()->write("No new records", true);
+                logger::write("No new records", E_NOTICE);
 
                 fileHandler->close();
                 delete fileHandler;
@@ -203,7 +204,7 @@ void watchdog::run(){
             }
             //Logrotate
             else if(size > actualSize){
-                logger::getInstance()->write("Logrotate, system pause..", true);
+                logger::write("Logrotate, system pause..", E_WARNING);
 
                 fileHandler->close();
                 delete fileHandler;
@@ -227,7 +228,7 @@ void watchdog::run(){
 
             fileHandler->clear();
 
-            logger::getInstance()->write("Loaded "+ utility::ltos(counter) +" lines", true);
+            logger::write("Loaded "+ utility::ltos(counter) +" lines", E_NOTICE);
 
             actualSize = utility::fileSize(logfile);
 
