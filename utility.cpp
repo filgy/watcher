@@ -1,8 +1,15 @@
 #include "utility.h"
 
-utility::utility()
-{
-    //ctor
+string utility::trim(string str){
+    unsigned int start,end;
+
+    for(start = 0; start < str.length() && str.at(start) == ' '; start++);
+
+    for(end = str.length(); str.length() > 0 && end > 0 && str.at(end - 1) == ' '; end--);
+
+    str = str.substr(start, end - start);
+
+    return str;
 }
 
 string utility::ltos(long number){
