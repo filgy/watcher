@@ -1,5 +1,8 @@
 #include "iniParser.h"
 
+/*  - - - - - - - - - - - - - - - - - - - - - -
+        Class: iniFile
+    ------------------------------------------- */
 iniFile::iniFile(){
     this->data.clear();
 }
@@ -16,10 +19,7 @@ void iniFile::addSection(string sectionName){
 bool iniFile::isSection(string sectionName){
      map<string, map<string, string> >::iterator p = this->data.find(sectionName);
 
-     if(p == this->data.end())
-        return false;
-    else
-        return true;
+     return (p == this->data.end())? false : true;
 }
 
 void iniFile::setValue(string sectionName, string directive, string value){
@@ -35,10 +35,8 @@ void iniFile::setValue(string sectionName, string directive, string value){
 string iniFile::getValue(string sectionName, string directive){
     if(!this->isSection(sectionName))
         return "";
-    else if(this->data[sectionName].find(directive) == this->data[sectionName].end())
-        return "";
-    else
-        return this->data[sectionName][directive];
+
+    return (this->data[sectionName].find(directive) == this->data[sectionName].end())? "" : this->data[sectionName][directive];
 }
 
 list<string> iniFile::getSections(){
@@ -50,6 +48,9 @@ list<string> iniFile::getSections(){
     return sections;
 }
 
+/*  - - - - - - - - - - - - - - - - - - - - - -
+        Class: iniParser
+    ------------------------------------------- */
 iniFile iniParser::load(string fileName){
     fstream fileHandler(fileName.c_str(), ios::in);
 
