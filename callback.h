@@ -14,7 +14,6 @@ class trigger
         string getName();
         string getPattern();
         string getCommand();
-
     private:
         string name;
         string pattern;
@@ -34,12 +33,10 @@ class callback
         string getLogfile();
         long getPosition();
         long getSize();
-        int getTriggersCount();
 
         void addTrigger(string, string, string);
-
         map<string, trigger> getTriggers();
-    protected:
+        int getTriggersCount();
     private:
         string file;
         string name;
@@ -48,9 +45,6 @@ class callback
         long size;
 
         map<string, trigger> triggers;
-
 };
-
-
 
 #endif // CALLBACK_H

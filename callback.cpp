@@ -1,5 +1,8 @@
 #include "callback.h"
 
+/*  - - - - - - - - - - - - - - - - - - - - - -
+        Class: trigger
+    ------------------------------------------- */
 trigger::trigger(string name, string pattern, string command){
     this->name = name;
     this->pattern = pattern;
@@ -17,6 +20,10 @@ string trigger::getPattern(){
 string trigger::getCommand(){
     return this->command;
 }
+
+/*  - - - - - - - - - - - - - - - - - - - - - -
+        Class: callback
+    ------------------------------------------- */
 
 callback::callback(string file, string name, string logfile, long position, long size)
 {
@@ -61,9 +68,7 @@ int callback::getTriggersCount(){
 }
 
 void callback::addTrigger(string name, string pattern, string command){
-    trigger tmp(name, pattern, command);
-
-    this->triggers.insert(make_pair(name, tmp));
+    this->triggers.insert(make_pair(name, trigger(name, pattern, command)));
 }
 
 map<string, trigger> callback::getTriggers(){
