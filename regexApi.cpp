@@ -1,5 +1,8 @@
 #include "regexApi.h"
 
+/*  - - - - - - - - - - - - - - - - - - - - - -
+        Class: regexApiMatch
+    ------------------------------------------- */
 regexApiMatch::regexApiMatch(){
     this->matches.clear();
 }
@@ -12,25 +15,25 @@ int regexApiMatch::size(){
     return this->matches.size();
 }
 
-string regexApiMatch::itemAt(int position){
-    if(position > this->matches.size())
+void regexApiMatch::clear(){
+    this->matches.clear();
+}
+
+string regexApiMatch::operator[](unsigned int position){
+    if(position >= this->matches.size())
         return "";
     else
         return this->matches.at(position);
 }
 
-string regexApiMatch::operator[](int position){
-    return this->itemAt(position);
-}
-
-void regexApiMatch::clear(){
-    this->matches.clear();
-}
-
-void regexApiMatch::itemAdd(string match){
+void regexApiMatch::insert(string match){
     this->matches.push_back(match);
 }
 
+
+/*  - - - - - - - - - - - - - - - - - - - - - -
+        Class: regexApi
+    ------------------------------------------- */
 bool regexApi::preg_match(string pattern, string subject){
     boost::xpressive::sregex bpattern = boost::xpressive::sregex::compile(pattern);
     boost::xpressive::smatch match;
@@ -39,17 +42,17 @@ bool regexApi::preg_match(string pattern, string subject){
 }
 
 bool regexApi::preg_match(string pattern, string subject, regexApiMatch& matches){
-    matches.clear();
-
     boost::xpressive::sregex bpattern = boost::xpressive::sregex::compile(pattern);
     boost::xpressive::smatch match;
 
+    matches.clear();
+
     if(boost::xpressive::regex_match(subject, match, bpattern)){
         for(boost::xpressive::smatch::iterator p = match.begin(); p != match.end(); p++)
-            matches.itemAdd((*p));
+            matches.insert((*p));
 
         return true;
     }
-    else
-        return false;
+
+    return false;
 }

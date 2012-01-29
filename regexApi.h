@@ -14,12 +14,9 @@ class regexApiMatch{
         regexApiMatch(vector<string>);
 
         int size();
-        string itemAt(int);
-        string operator[](int);
-
         void clear();
-        void itemAdd(string);
-
+        void insert(string);
+        string operator[](unsigned int);
     private:
         vector<string> matches;
 };
