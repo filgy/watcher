@@ -1,17 +1,17 @@
 #ifndef WATCHDOG_H
 #define WATCHDOG_H
 
-//#include <boost/xpressive/xpressive.hpp>
-#include "logger.h"
-#include "flags.h"
-#include "iniFile.h"
-#include "iniParser.h"
-#include "callback.h"
-#include "utility.h"
 #include <sys/types.h>
 #include <dirent.h>
 #include <list>
 #include <map>
+
+#include "flags.h"
+#include "logger.h"
+#include "regexApi.h"
+#include "iniParser.h"
+#include "callback.h"
+#include "utility.h"
 
 using namespace std;
 

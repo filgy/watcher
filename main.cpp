@@ -9,7 +9,7 @@ int main(int argc, char* argv[]){
         cout << HELP_MESSAGE << endl;
     else{
         try{
-            watchdog puppy("./callbacks/", 3);
+            watchdog puppy("./callbacks/", 5);
         }
         catch(...){
             cerr << "Got exception" << endl;

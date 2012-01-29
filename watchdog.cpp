@@ -30,6 +30,10 @@ watchdog::watchdog(string callbackDir, unsigned int interval){
 
                 break;
         }
+
+        logger::write("Aborting..", E_ERROR);
+
+        throw 1;
     }
 }
 
@@ -178,6 +182,7 @@ void watchdog::run(){
 
     //Inifinity
     while(true){
+        //For all suspects
         for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
             logfile = (*p).second.getLogfile();
             position = (*p).second.getPosition();
@@ -217,18 +222,42 @@ void watchdog::run(){
                 continue;
             }
 
-            unsigned int counter = 0;
+            unsigned int loadedLines = 0;
+            unsigned int processedCallbacks = 0;
+
             string line;
 
             fileHandler->seekp(position, ios::beg);
 
+            //Get all triggers
+            map<string, trigger> triggers = (*p).second.getTriggers();
+
+            regexApiMatch match;
+
+            string command;
+
+            //Loading lines from logfile
             while(getline(*fileHandler, line)){
-                counter++;
+                for(map<string, trigger>::iterator q = triggers.begin(); q != triggers.end(); q++){
+                    if(regexApi::preg_match((*q).second.getPattern(), line, match)){
+                        command = (*q).second.getCommand();
+
+                        for(int i = 0; i < match.size(); i++){
+                            command = utility::replace("\\" + utility::itos(i), match[i], command);
+                        }
+                        logger::write("PROCEED: " + command, E_NOTICE);
+
+                        processedCallbacks++;
+                    }
+                }
+
+                loadedLines++;
             }
 
             fileHandler->clear();
 
-            logger::write("Loaded "+ utility::ltos(counter) +" lines", E_NOTICE);
+            logger::write("Loaded "+ utility::ltos(loadedLines) +" lines", E_NOTICE);
+            logger::write("Processed " + utility::ltos(processedCallbacks) +" callbacks", E_NOTICE);
 
             actualSize = utility::fileSize(logfile);
 
