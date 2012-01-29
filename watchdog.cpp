@@ -242,9 +242,21 @@ void watchdog::run(){
                     if(regexApi::preg_match((*q).second.getPattern(), line, match)){
                         command = (*q).second.getCommand();
 
-                        for(int i = 0; i < match.size(); i++){
+                        for(int i = 0; i < match.size(); i++)
                             command = utility::replace("\\" + utility::itos(i), match[i], command);
+
+                        pid_t pid;
+
+                        if((pid = fork()) == -1){
+                            logger::write("Cannot fork", E_ERROR);
+                            throw 2;
                         }
+
+                        if(!pid){
+                            execvp(command.c_str(), NULL);
+                            exit(1);
+                        }
+
                         logger::write("PROCEED: " + command, E_NOTICE);
 
                         processedCallbacks++;
