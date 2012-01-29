@@ -1,6 +1,10 @@
 #include "watchdog.h"
 
+bool watchdog::active = true;
+
 watchdog::watchdog(string callbackDir, unsigned int interval){
+    signal(SIGINT, watchdog::getsig);
+
     this->callbackDir = callbackDir;
     this->interval = interval;
 
@@ -40,6 +44,8 @@ watchdog::watchdog(string callbackDir, unsigned int interval){
             //Callback abort
             case WATCHDOG_CALLBACK_ABORT:
                 throw WATCHDOG_ABORT;
+                break;
+            case WATCHDOG_SIGINT:
                 break;
             default:
                 logger::write("Catched unhandled expcetion", E_ERROR);
@@ -196,6 +202,9 @@ void watchdog::run(){
 
     //Inifinity
     while(true){
+        if(!watchdog::active)
+            throw WATCHDOG_SIGINT;
+
         //For all suspects
         for(map<string, callback>::iterator p = this->suspects.begin(); p != this->suspects.end(); p++){
             logfile = (*p).second.getLogfile();
@@ -308,4 +317,8 @@ void watchdog::run(){
         //Soft kitty, warm kitty, little ball of fur..
         sleep(this->interval);
     }
+}
+
+void watchdog::getsig(int sig){
+    watchdog::active = false;
 }

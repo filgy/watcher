@@ -21,7 +21,7 @@ class logger
         static void setVerbose(bool = true);
 
         static bool open(string);
-        static bool write(string, loggerFlags);
+        static bool write(string, loggerFlags = E_ERROR);
         static bool close();
     private:
         static fstream* fileHandler;

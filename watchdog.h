@@ -30,13 +30,14 @@ class watchdog
 
         void run();
 
-        void DEBUG();
+        static void getsig(int);
     private:
         string callbackDir;
         unsigned int interval;
 
         map<string, callback> suspects;
 
+        static bool active;
 };
 
 #endif // WATCHDOG_H
