@@ -2,12 +2,34 @@
 #define INIPARSER_H
 
 #include <fstream>
-#include "regexApi.h"
+#include <string>
+#include <utility>
+#include <list>
+#include <map>
+
 #include "flags.h"
+#include "regexApi.h"
 #include "utility.h"
-#include "iniFile.h"
 
 using namespace std;
+
+class iniFile
+{
+    public:
+        iniFile();
+        virtual ~iniFile();
+
+        void addSection(string);
+        bool isSection(string);
+
+        void setValue(string, string, string);
+        string getValue(string, string);
+
+        list<string> getSections();
+
+    private:
+        map<string, map<string, string> > data;
+};
 
 class iniParser
 {
